@@ -1,0 +1,26 @@
+{
+  "name": "hapi-rethinkdb-crud",
+  "version": "0.0.1",
+  "description": "Crud operations for Rethinkdb on a Hapi server",
+  "main": "index.js",
+  "scripts": {
+    "test": "lab -c -L"
+  },
+  "keywords": [
+    "Hapi",
+    "Rethinkdb",
+    "Crud"
+  ],
+  "author": "Thomas Eng",
+  "license": "ISC",
+  "dependencies": {
+    "autocoerce": "^1.0.3",
+    "hapi": "^12.1.0",
+    "hapi-rethinkdb": "^2.0.1",
+    "rethinkdb": "^2.2.1"
+  },
+  "devDependencies": {
+    "code": "^2.1.0",
+    "lab": "^8.2.0"
+  }
+}
