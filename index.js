@@ -2,7 +2,7 @@
 
 const AutoCoerce  = require('autocoerce');
 
-const handlers = {    
+const handlers = {
     index: function (request,reply) {
 
         const c = request.server.plugins['hapi-rethinkdb'].connection;
@@ -22,15 +22,18 @@ const handlers = {
         const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
         const c = request.server.plugins['hapi-rethinkdb'].connection;
         r.table(this.tableName).get(request.params.id).run(c).then( (item) => {
+
             reply(item);
         },reply);
     },
-    join: function (request, reply, joinTable, byColumn) {
+    join: function (request, reply) {
 
         const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
         const c = request.server.plugins['hapi-rethinkdb'].connection;
+        const joinTable = request.params.member;
+        const byColumn = request.params.column;
 
-        r.table(this.tableName).get(request.params.id).merge(function(item) {
+        r.table(this.tableName).get(request.params.id).merge( (item) => {
 
             const filter = {};
             filter[byColumn] = item('id');
@@ -40,7 +43,25 @@ const handlers = {
 
             return obj;
         }).run(c).then( (result) => {
+
             reply(result);
+        },reply);
+    },
+    member: function (request, reply) {
+
+        const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
+        const c = request.server.plugins['hapi-rethinkdb'].connection;
+        const tableName = request.params.member;
+        const byColumn = request.params.column;
+
+        const filter = {};
+        filter[byColumn] = request.params.id;
+        r.table(tableName).filter(filter).run(c).then( (cursor) => {
+
+            cursor.toArray().then( (items) => {
+
+                reply(items);
+            },reply);
         },reply);
     },
     post: function (request, reply) {
@@ -105,22 +126,10 @@ exports.factory = function (tableName) {
 
         this.tableName = name;
     };
-    
-    Handler.prototype.action = function () {
-        const args = Array.apply(null, arguments);
-        const name = args[0];
-        const rest = args.slice(1);
-        const method = this.handlers[name].bind(this);
-        
-        const proxy = function(request,reply) {
-            method.call(this.handler, request, reply, ...this.args);
-        }.bind({
-            handler: this,
-            method: method,
-            args: rest
-        });
 
-        return proxy;
+    Handler.prototype.action = function (name) {
+
+        return this.handlers[name].bind(this);
     };
 
     Handler.prototype.handlers = handlers;
