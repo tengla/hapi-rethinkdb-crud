@@ -36,8 +36,8 @@ server.route({
 });
 ```
 
-If 'items' has 'parts', with 'parts' having a 'itemId' column, a url can be constructed
-to join parts with item object, like ```/items/parts/itemId/rdb-id-string/join```
+If ```item``` has ```parts```, with each ```part``` having an ```itemId``` column, a url can be constructed
+to join ```parts``` with ```item``` object, like ```/items/parts/itemId/rdb-id-string/join```
 
 ```
 server.route({
@@ -47,8 +47,8 @@ server.route({
 });
 ```
 
-Likewise, if 'items' has 'parts', with 'parts' having a 'itemId' column, a url can be constructed
-to get a 'parts' listing ```/items/parts/itemId/rdb-id-string```
+Likewise, if ```items``` has ```parts```, with each ```part``` having an ```itemId``` column, a url can be constructed
+to get a ```parts``` listing ```/items/parts/itemId/rdb-id-string```
 
 ```
 server.route({
