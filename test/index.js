@@ -26,37 +26,49 @@ const RethinkDbPlugin = {
     }
 };
 
+const fixtures = {
+    items: [
+        {
+            id: 'yammie1',
+            name: 'YAMAHA',
+            model: 'XJR1300'
+        },
+        {
+            id: 'yammie2',
+            name: 'YAMAHA WITH SPACE',
+            model: 'XJR1300'
+        },
+        {
+            id: 'bmw',
+            name: 'BMW',
+            model: 'R100'
+        }
+    ],
+    parts: [
+        {
+            name: 'Scrambler seat',
+            desc: 'Fits BMW models R100/7, R100RS, R100RT',
+            itemId: 'bmw'
+        }
+    ]
+};
+
 lab.before((done) => {
 
-    Insert(dbOptions,
-        {
-            items: [
-                {
-                    name: 'YAMAHA',
-                    model: 'XJR1300'
-                },
-                {
-                    name: 'YAMAHA WITH SPACE',
-                    model: 'XJR1300'
-                },
-                {
-                    name: 'BMW',
-                    model: 'R100'
-                }
-            ]
-        }
-    ).then( (fixtures) => {
+    Insert(dbOptions,fixtures)
+        .then( (_fixtures) => {
 
-        done();
-    },console.error);
+            done();
+        },console.error);
 });
 
 lab.after( (done) => {
 
-    Delete(dbOptions, ['items']).then( (changes) => {
+    Delete(dbOptions, Object.keys(fixtures))
+        .then( (changes) => {
 
-        done();
-    },console.error);
+            done();
+        },console.error);
 });
 
 lab.beforeEach((done) => {
@@ -77,31 +89,43 @@ lab.beforeEach((done) => {
     server.route({
         method: 'GET',
         path: '/search/{key}/{value}',
-        handler: Handlers.verb('search')
+        handler: Handlers.action('search')
     });
 
     server.route({
         method: 'GET',
         path: '/items',
-        handler: Handlers.verb('get')
+        handler: Handlers.action('index')
+    });
+    
+    server.route({
+        method: 'GET',
+        path: '/items/{id}',
+        handler: Handlers.action('show')
+    });
+    
+    server.route({
+        method: 'GET',
+        path: '/items/{id}/parts',
+        handler: Handlers.action('join','parts','itemId')
     });
 
     server.route({
         method: 'POST',
         path: '/items',
-        handler: Handlers.verb('post')
+        handler: Handlers.action('post')
     });
 
     server.route({
         method: 'PUT',
         path: '/items/{id}',
-        handler: Handlers.verb('put')
+        handler: Handlers.action('put')
     });
 
     server.route({
         method: 'DELETE',
         path: '/items/{id}',
-        handler: Handlers.verb('delete')
+        handler: Handlers.action('delete')
     });
 });
 
@@ -125,19 +149,38 @@ lab.experiment('handlers', () => {
     lab.test('should search', (done) => {
 
         server.inject({ method: 'GET', url: '/search/name/YAMAHA WITH SPACE' }, (response) => {
-            console.log(response.result);
+
             expect(response.result.length).to.be.equal(1);
             expect(response.statusCode).to.equal(200);
             done();
         });
     });
 
-    lab.test('should get', (done) => {
+    lab.test('should get index', (done) => {
 
         server.inject({ method: 'GET', url: '/items' }, (response) => {
 
             expect(response.result.length).to.be.equal(3);
             expect(response.statusCode).to.equal(200);
+            done();
+        });
+    });
+    
+    lab.test('should show item', (done) => {
+        server.inject({ method: 'GET', url: '/items/bmw'}, (response) => {
+
+            expect(response.result.name).to.be.equal('BMW');
+            expect(response.result.model).to.be.equal('R100');
+            expect(response.statusCode).to.equal(200);
+            done();
+        });
+    });
+
+    lab.test('should join \'parts\' with \'item\'', (done) => {
+        server.inject({ method: 'GET', url: '/items/bmw/parts' }, (response) => {
+
+            expect(response.result.parts.length).to.be.equal(1);
+            expect(response.result.parts[0].name).to.be.equal('Scrambler seat');
             done();
         });
     });
@@ -171,4 +214,5 @@ lab.experiment('handlers', () => {
             done();
         });
     });
+    lab.test('should join ')
 });

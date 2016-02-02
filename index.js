@@ -2,8 +2,8 @@
 
 const AutoCoerce  = require('autocoerce');
 
-const handlers = {
-    get: function (request,reply) {
+const handlers = {    
+    index: function (request,reply) {
 
         const c = request.server.plugins['hapi-rethinkdb'].connection;
         const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
@@ -15,6 +15,32 @@ const handlers = {
 
                 reply(items);
             },reply);
+        },reply);
+    },
+    show: function (request,reply) {
+
+        const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
+        const c = request.server.plugins['hapi-rethinkdb'].connection;
+        r.table(this.tableName).get(request.params.id).run(c).then( (item) => {
+            reply(item);
+        },reply);
+    },
+    join: function (request, reply, joinTable, byColumn) {
+
+        const r = request.server.plugins['hapi-rethinkdb'].rethinkdb;
+        const c = request.server.plugins['hapi-rethinkdb'].connection;
+
+        r.table(this.tableName).get(request.params.id).merge(function(item) {
+
+            const filter = {};
+            filter[byColumn] = item('id');
+
+            const obj = {};
+            obj[joinTable] = r.table(joinTable).filter(filter).coerceTo('array');
+
+            return obj;
+        }).run(c).then( (result) => {
+            reply(result);
         },reply);
     },
     post: function (request, reply) {
@@ -79,11 +105,22 @@ exports.factory = function (tableName) {
 
         this.tableName = name;
     };
+    
+    Handler.prototype.action = function () {
+        const args = Array.apply(null, arguments);
+        const name = args[0];
+        const rest = args.slice(1);
+        const method = this.handlers[name].bind(this);
+        
+        const proxy = function(request,reply) {
+            method.call(this.handler, request, reply, ...this.args);
+        }.bind({
+            handler: this,
+            method: method,
+            args: rest
+        });
 
-    Handler.prototype.verb = function (verb) {
-
-        const method = this.handlers[verb];
-        return method.bind(this);
+        return proxy;
     };
 
     Handler.prototype.handlers = handlers;
